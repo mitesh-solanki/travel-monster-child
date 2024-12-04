@@ -1,5 +1,4 @@
 jQuery(document).ready(function () {
-    console.log(jQuery("#wp-travel-engine-order-form").attr("data-id"));
     jQuery("#wp-travel-engine-order-form").submit(function (e) {
       e.preventDefault();
       var formData = jQuery(this).serializeArray(); // Collect form data

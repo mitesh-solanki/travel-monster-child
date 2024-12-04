@@ -68,7 +68,6 @@ $args = array(
 
 $data =  WTE()->session->get($wte_id);
 
-var_dump($data);
 
 if (isset($data) && $data) {
 	$booking_id = $data;
