@@ -72,10 +72,9 @@ function cpm_after_chekout_submit($post_id)
 {
     if (isset($_POST['wp_travel_engine_nw_bkg_submit'])) {
         $prev_booking_id = $_GET['bookingId'];
-        // die(var_dump($prev_booking_id));
         $traveler_info = get_post_meta($prev_booking_id, 'wp_travel_engine_placeorder_setting', true);
         $update =  update_post_meta($post_id, 'wp_travel_engine_placeorder_setting', $traveler_info);
-        webhook_trigger_call($traveler_info, $post_id);
+        webhook_trigger_call($traveler_info, $prev_booking_id,$post_id);
     }
 }
 
@@ -136,7 +135,7 @@ function send_webhook_data($data)
     if (empty($webhook_endpoint)) {
         return; // No endpoint configured, exit
     }
-    // die(var_dump($data));
+    die(var_dump($data));
     $returned_data = wp_remote_post($webhook_endpoint, [
         'headers' => [
             'Content-Type' => 'application/json',
@@ -176,16 +175,29 @@ function send_webhook_data($data)
 }
 
 // Example hook to trigger the webhook (e.g., when a booking is created)
-function webhook_trigger_call($traveler_info, $post_id)
+function webhook_trigger_call($traveler_info, $prev_booking_id,$post_id)
 {
-    // if (isset($_GET['trigger_webhook']) && current_user_can('manage_options')) {
-    // Sample data format
     // Initialize the output structure
+    $productName = '';
+    $formattedDate = '';
+    $id = '';
+    $package_info = get_post_meta($prev_booking_id, 'order_trips', true);
+    foreach ($package_info as $key => $details) {
+        $productName = $details['title'];
+        $id = $details['id'];
+        preg_match('/\d{4}-\d{2}-\d{2}/', $key, $matches);
+
+        if (!empty($matches)) {
+            $date = $matches[0]; // The date in YYYY-MM-DD format
+            $formattedDate = date('d/m/Y', strtotime($date)); // Convert to DD/MM/YYYY format
+        }
+    }
+    die(print_r($package_info));
     $output = [
         "bookingID" => $post_id,
-        "productName" => "Test",
-        "productCode" => "LA",
-        "departureDateDDMMYYYY" => "16/10/2023",
+        "productName" => $productName,
+        "productCode" => $id,
+        "departureDateDDMMYYYY" => $formattedDate,
         "TravellerCount" => count($traveler_info['place_order']['travelers']['title']),
         "travellers" => [],
         "spaces" => "",
