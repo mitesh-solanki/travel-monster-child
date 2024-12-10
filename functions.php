@@ -36,7 +36,6 @@ function submit_traveler_information()
     $booking_id = $_POST['booking_id'];
     $outputArray = [];
     foreach ($form_datas as $item) {
-        // Skip the nonce
         if ($item['name'] == 'nonce') {
             continue;
         }
@@ -49,7 +48,6 @@ function submit_traveler_information()
             $index = $matches[2];
             $value = $item['value'];
 
-            // Assign the value to the output array
             $outputArray['place_order']['travelers'][$key][$index] = $value;
         }
     }
@@ -97,9 +95,7 @@ add_action('admin_menu', 'custom_webhook_settings_page');
 // Render the settings page
 function render_webhook_settings_page()
 {
-    // Check if the user has submitted the form
     if (isset($_POST['webhook_endpoint'])) {
-        // Save the webhook endpoint
         $webhook_endpoint = sanitize_text_field($_POST['webhook_endpoint']);
         update_option('webhook_endpoint', $webhook_endpoint);
         echo '<div class="updated"><p>Webhook Endpoint Saved!</p></div>';
@@ -130,10 +126,9 @@ function render_webhook_settings_page()
 // Function to send JSON data to the webhook
 function send_webhook_data($data)
 {
-    // Retrieve the saved webhook endpoint
     $webhook_endpoint = get_option('webhook_endpoint');
     if (empty($webhook_endpoint)) {
-        return; // No endpoint configured, exit
+        return;
     }
     $returned_data = wp_remote_post($webhook_endpoint, [
         'headers' => [
@@ -173,10 +168,9 @@ function send_webhook_data($data)
     // }
 }
 
-// Example hook to trigger the webhook (e.g., when a booking is created)
+// This function is called when 
 function webhook_trigger_call($traveler_info, $prev_booking_id,$post_id)
 {
-    // Initialize the output structure
     $productName = '';
     $formattedDate = '';
     $id = '';
@@ -201,7 +195,6 @@ function webhook_trigger_call($traveler_info, $prev_booking_id,$post_id)
         "spaces" => "",
     ];
 
-    // Process each traveler
     foreach ($traveler_info['place_order']['travelers']['title'] as $key => $title) {
         $output['travellers'][] = [
             "prefix" => $title,
@@ -216,7 +209,5 @@ function webhook_trigger_call($traveler_info, $prev_booking_id,$post_id)
     }
 
     $data = json_encode($output, JSON_PRETTY_PRINT);
-
-    // Send the data
     send_webhook_data($data);
 }
