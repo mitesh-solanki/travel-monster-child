@@ -135,7 +135,6 @@ function send_webhook_data($data)
     if (empty($webhook_endpoint)) {
         return; // No endpoint configured, exit
     }
-    die(var_dump($data));
     $returned_data = wp_remote_post($webhook_endpoint, [
         'headers' => [
             'Content-Type' => 'application/json',
@@ -192,7 +191,6 @@ function webhook_trigger_call($traveler_info, $prev_booking_id,$post_id)
             $formattedDate = date('d/m/Y', strtotime($date)); // Convert to DD/MM/YYYY format
         }
     }
-    die(print_r($package_info));
     $output = [
         "bookingID" => $post_id,
         "productName" => $productName,
