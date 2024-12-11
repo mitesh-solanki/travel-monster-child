@@ -79,15 +79,14 @@ function cpm_after_chekout_submit($post_id)
 
 // Add settings page to the WordPress admin menu
 function custom_webhook_settings_page()
-{
-    add_menu_page(
+{ 
+    add_submenu_page(
+        'edit.php?post_type=booking',
         'Webhook Integration', // Page title
         'Webhook Settings',    // Menu title
         'manage_options',      // Capability
         'webhook-settings',    // Menu slug
         'render_webhook_settings_page', // Callback function
-        'dashicons-admin-generic',      // Icon
-        80                             // Position
     );
 }
 add_action('admin_menu', 'custom_webhook_settings_page');
@@ -113,7 +112,7 @@ function render_webhook_settings_page()
                     <td>
                         <input type="text" name="webhook_endpoint" id="webhook_endpoint" class="regular-text"
                             value="<?php echo esc_attr($current_endpoint); ?>" required>
-                        <p class="description">Enter your Webhook Endpoint URL, Email, or UUID.</p>
+                        <p class="description">Enter your Webhook Endpoint URL.</p>
                     </td>
                 </tr>
             </table>
