@@ -137,11 +137,8 @@ function send_webhook_data($data)
         'body'    => wp_json_encode($data),
         'timeout' => 120,
     ]);
-
-    // die(var_dump($returned_data));
     // Determine the type of endpoint (URL, Email, or UUID)
     // if (filter_var($webhook_endpoint, FILTER_VALIDATE_URL)) {
-    //     die('if');
 
     //     // Send the data to a URL
     //     wp_remote_post($webhook_endpoint, [
@@ -152,12 +149,10 @@ function send_webhook_data($data)
     //     ]);
     // } elseif (filter_var($webhook_endpoint, FILTER_VALIDATE_EMAIL)) {
     //     // Send the data via email
-    //     die('ifelse');
     //     wp_mail($webhook_endpoint, 'Webhook Data', json_encode($data, JSON_PRETTY_PRINT));
     // } elseif (preg_match('/^[a-f0-9\-]{36}$/', $webhook_endpoint)) {
     //     // Handle UUID format (if a specific API needs to be called, modify here)
     //     // Example: Add prefix or use a specific service
-    //     die('ifelse 2');
     //     $url = home_url().'/' . $webhook_endpoint;
     //     wp_remote_post($url, [
     //         'headers' => [
@@ -177,7 +172,7 @@ function webhook_trigger_call($traveler_info, $prev_booking_id,$post_id)
     $package_info = get_post_meta($prev_booking_id, 'order_trips', true);
     foreach ($package_info as $key => $details) {
         $productName = $details['title'];
-        $id = $details['id'];
+        $id = $details['ID'];
         preg_match('/\d{4}-\d{2}-\d{2}/', $key, $matches);
 
         if (!empty($matches)) {
