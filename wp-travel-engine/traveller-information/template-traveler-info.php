@@ -168,8 +168,11 @@ if (isset($booking_id)) {
 	if (isset($_status) && ! empty($_status)) :
 		$wp_travel_engine_thankyou = add_query_arg('status', $_status, $wp_travel_engine_thankyou);
 	endif;
+
+	$wp_travel_engine_setting =  get_post_meta($tripid[0], 'wp_travel_engine_setting', true);
+    $one_day_trip = ($wp_travel_engine_setting['trip_duration'] == '1' && $wp_travel_engine_setting['trip_duration_unit'] == 'days') ?? false;
 ?>
-	<form method="post" id="wp-travel-engine-order-form" action="" enctype="multipart/form-data" data-id=<?php echo $booking_id; ?>>
+	<form method="post" id="wp-travel-engine-order-form" class="<?php echo $one_day_trip ? 'one-day-trip' : ''; ?>" action="" enctype="multipart/form-data" data-id=<?php echo $booking_id; ?>>
 		<?php
 		if (isset($_wte_gateway) && 'paypal' === $_wte_gateway) {
 			do_action('wp_travel_engine_verify_paypal_ipn');
@@ -201,6 +204,7 @@ if (isset($booking_id)) {
 
 		$traveller_fields = WTE_Default_Form_Fields::traveller_information();
 		$traveller_fields = apply_filters('wp_travel_engine_traveller_info_fields_display', $traveller_fields);
+		$traveller_fields = apply_filters('os_travel_engine_traveller_info_fields_display', $traveller_fields, $one_day_trip);
 
 		$emergency_contact_fields = WTE_Default_Form_Fields::emergency_contact();
 		$emergency_contact_fields = apply_filters('wp_travel_engine_emergency_contact_fields_display', $emergency_contact_fields);
@@ -228,12 +232,10 @@ if (isset($booking_id)) {
 				},
 				$traveller_fields
 			);
-
+			$modified_traveller_fields = apply_filters('os_traveller_fields', $modified_traveller_fields, $i, $one_day_trip);
 			$form_fields->init($modified_traveller_fields)->render();
 
-			if (! isset($wp_travel_engine_settings_options['emergency'])) {
-				echo '<div class="relation-options-title">' . sprintf(esc_html__('Emergency contact details for Traveller: #%1$s', 'wp-travel-engine'), esc_html($i)) . '</div>';
-
+			if (! isset($wp_travel_engine_settings_options['emergency']) ) {
 				$modified_emergency_contact_fields = array_map(
 					function ($field) use ($i) {
 						if (strpos($field['name'], 'wp_travel_engine_placeorder_setting[place_order][relation]') !== false) {
@@ -248,6 +250,11 @@ if (isset($booking_id)) {
 					},
 					$emergency_contact_fields
 				);
+
+				$modified_emergency_contact_fields = apply_filters('os_emergency_contact_fields', $modified_emergency_contact_fields, $i, $one_day_trip);
+				if(count($modified_emergency_contact_fields) > 0) {
+					echo '<div class="relation-options-title">' . sprintf(esc_html__('Emergency contact details for Traveller: #%1$s', 'wp-travel-engine'), esc_html($i)) . '</div>';
+				}
 
 				$form_fields->init($modified_emergency_contact_fields)->render();
 			}

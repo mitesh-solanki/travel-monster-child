@@ -11,3 +11,8 @@ Updated: 2024-12-02 10:51:42
 
 */
 
+
+.one-day-trip .wp-travel-engine-personal-details:nth-child(2n), 
+.one-day-trip .wp-travel-engine-relation-details:nth-child(2n) {
+    clear: none;
+}
