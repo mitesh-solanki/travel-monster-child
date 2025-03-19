@@ -50,10 +50,21 @@ function submit_traveler_information()
 
             $outputArray['place_order']['travelers'][$key][$index] = $value;
         }
+
+        preg_match('/wp_travel_engine_placeorder_setting\[place_order\]\[relation\]\[([^\]]+)\]\[([^\]]+)\]/', $item['name'], $matches);
+
+        if (count($matches) == 3) {
+            $key = $matches[1];
+            $index = $matches[2];
+            $value = $item['value'];
+
+            $outputArray['place_order']['relation'][$key][$index] = $value;
+        }
     }
 
     if ($outputArray) {
         $update =  update_post_meta($booking_id, 'wp_travel_engine_placeorder_setting', $outputArray);
+        update_post_meta($booking_id, 'traveller_info', $outputArray);
         if ($update == true) {
 
             echo 'successfull';
@@ -72,6 +83,8 @@ function cpm_after_chekout_submit($post_id)
         $prev_booking_id = $_GET['bookingId'];
         $traveler_info = get_post_meta($prev_booking_id, 'wp_travel_engine_placeorder_setting', true);
         $update =  update_post_meta($post_id, 'wp_travel_engine_placeorder_setting', $traveler_info);
+        $traveller_details = get_post_meta($prev_booking_id, 'traveller_info', true);
+        update_post_meta($post_id, 'traveller_info', $traveller_details);
         webhook_trigger_call($traveler_info, $prev_booking_id, $post_id);
     }
 }
@@ -137,7 +150,6 @@ function send_webhook_data($data)
         'body'    => wp_json_encode($data),
         'timeout' => 120,
     ]);
-    die(print_r($returned_data));
     // Determine the type of endpoint (URL, Email, or UUID)
     // if (filter_var($webhook_endpoint, FILTER_VALIDATE_URL)) {
 
@@ -171,16 +183,12 @@ function webhook_trigger_call($traveler_info, $prev_booking_id, $post_id)
     $formattedDate = '';
     $id = '';
     // die(print_r($traveler_info));
-    $package_info = get_post_meta($prev_booking_id, 'order_trips', true);
+    $package_info = get_post_meta($post_id, 'order_trips', true);
     foreach ($package_info as $key => $details) {
-        $productName = $details['fname'];
+        $productName = $details['package_name'];
         $id = $details['ID'];
-        preg_match('/\d{4}-\d{2}-\d{2}/', $key, $matches);
-
-        if (!empty($matches)) {
-            $date = $matches[0]; // The date in YYYY-MM-DD format
-            $formattedDate = date('d/m/Y', strtotime($date)); // Convert to DD/MM/YYYY format
-        }
+        $date = $details['datetime'];
+        $formattedDate = date('d/m/Y', strtotime($date)); // Convert to DD/MM/YYYY format
     }
     $output = [
         "bookingID" => $post_id,
@@ -188,21 +196,21 @@ function webhook_trigger_call($traveler_info, $prev_booking_id, $post_id)
         "productCode" => "LA",
         "departureDateDDMMYYYY" => $formattedDate,
         "DepartureCode" => "",
-        "TravellerCount" => count($traveler_info['place_order']['travelers']['title']),
+        "TravellerCount" => count($traveler_info['place_order']['travelers']['fname']),
         "travellers" => [],
         "emergencyContact" => [
-            "firstName" => "",
-            "lastName" => "",
-            "primaryPhoneNumber" => "",
+            "firstName" => $traveler_info['place_order']['relation']['fname'][1],
+            "lastName" => $traveler_info['place_order']['relation']['fname'][1],
+            "primaryPhoneNumber" => $traveler_info['place_order']['relation']['phone'][1],
             "primaryPhoneNumberType" => "",
             "primaryPhoneNumberCountry" => "",
             "alternatePhoneNumber" => "",
             "alternatePhoneNumberType" => "",
             "alternatePhoneNumberCountry" => "",
-            "relationship" => "",
+            "relationship" => $traveler_info['place_order']['relation']['relation'][1],
             "email" => "",
         ],
-        "howDidYouHearAboutUs" => "Personal Recommendation",
+        "howDidYouHearAboutUs" => $traveler_info['place_order']['travelers']['hear_about'][1],
     ];
 
     foreach ($traveler_info['place_order']['travelers']['fname'] as $key => $title) {
@@ -219,19 +227,19 @@ function webhook_trigger_call($traveler_info, $prev_booking_id, $post_id)
             "postalState" => "",
             "postalCode" => $traveler_info['place_order']['travelers']['postcode'][$key],
             "postalCountry" => $traveler_info['place_order']['travelers']['country'][$key],
-            "height" => 162,
+            "height" => $traveler_info['place_order']['travelers']['height'][$key],
             "weight" => 66,
             "occupation" => "Retired",
             "preExistingMedicalConditions" => 0,
             "preExistingMedicalConditionsDetail" => "",
             "specialDietaryRequirements" => 0,
             "specialDietaryRequirementsDetail" => "",
-            "bikeRental" => "Electric Bike",
+            "bikeRental" => $traveler_info['place_order']['travelers']['bike'][$key],
             "cyclingSkillLevel" => "Reasonable - cycle occasionally for up to 1hr",
         ];
     }
 
-    $data = json_encode($output, JSON_PRETTY_PRINT);
+    $data = json_encode($output, );
     send_webhook_data($data);
 }
 
