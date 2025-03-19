@@ -72,14 +72,14 @@ function cpm_after_chekout_submit($post_id)
         $prev_booking_id = $_GET['bookingId'];
         $traveler_info = get_post_meta($prev_booking_id, 'wp_travel_engine_placeorder_setting', true);
         $update =  update_post_meta($post_id, 'wp_travel_engine_placeorder_setting', $traveler_info);
-        webhook_trigger_call($traveler_info, $prev_booking_id,$post_id);
+        webhook_trigger_call($traveler_info, $prev_booking_id, $post_id);
     }
 }
 
 
 // Add settings page to the WordPress admin menu
 function custom_webhook_settings_page()
-{ 
+{
     add_submenu_page(
         'edit.php?post_type=booking',
         'Webhook Integration', // Page title
@@ -129,6 +129,7 @@ function send_webhook_data($data)
     if (empty($webhook_endpoint)) {
         return;
     }
+    // die(print_r(wp_json_encode($data)));
     $returned_data = wp_remote_post($webhook_endpoint, [
         'headers' => [
             'Content-Type' => 'application/json',
@@ -136,6 +137,7 @@ function send_webhook_data($data)
         'body'    => wp_json_encode($data),
         'timeout' => 120,
     ]);
+    die(print_r($returned_data));
     // Determine the type of endpoint (URL, Email, or UUID)
     // if (filter_var($webhook_endpoint, FILTER_VALIDATE_URL)) {
 
@@ -163,11 +165,12 @@ function send_webhook_data($data)
 }
 
 // This function is called when 
-function webhook_trigger_call($traveler_info, $prev_booking_id,$post_id)
+function webhook_trigger_call($traveler_info, $prev_booking_id, $post_id)
 {
     $productName = '';
     $formattedDate = '';
     $id = '';
+    // die(print_r($traveler_info));
     $package_info = get_post_meta($prev_booking_id, 'order_trips', true);
     foreach ($package_info as $key => $details) {
         $productName = $details['fname'];
@@ -182,22 +185,49 @@ function webhook_trigger_call($traveler_info, $prev_booking_id,$post_id)
     $output = [
         "bookingID" => $post_id,
         "productName" => $productName,
-        "productCode" => $id,
+        "productCode" => "LA",
         "departureDateDDMMYYYY" => $formattedDate,
-        "TravellerCount" => count($traveler_info['place_order']['travelers']['fname']),
+        "DepartureCode" => "",
+        "TravellerCount" => count($traveler_info['place_order']['travelers']['title']),
         "travellers" => [],
-        "spaces" => "",
+        "emergencyContact" => [
+            "firstName" => "",
+            "lastName" => "",
+            "primaryPhoneNumber" => "",
+            "primaryPhoneNumberType" => "",
+            "primaryPhoneNumberCountry" => "",
+            "alternatePhoneNumber" => "",
+            "alternatePhoneNumberType" => "",
+            "alternatePhoneNumberCountry" => "",
+            "relationship" => "",
+            "email" => "",
+        ],
+        "howDidYouHearAboutUs" => "Personal Recommendation",
     ];
 
     foreach ($traveler_info['place_order']['travelers']['fname'] as $key => $title) {
         $output['travellers'][] = [
             "firstName" => $traveler_info['place_order']['travelers']['fname'][$key],
+            "middleName" => "",
             "lastName" => $traveler_info['place_order']['travelers']['lname'][$key],
-            "phoneDaytime" => $traveler_info['place_order']['travelers']['phone'][$key] ?? '',
-            "email" => $traveler_info['place_order']['travelers']['email'][$key] ?? '',
-            "postalAddress" => $traveler_info['place_order']['travelers']['address'][$key] ?? '',
-            "postalCountry" => $traveler_info['place_order']['travelers']['country'][$key] ?? '',
-            "customer-note" => ""
+            "dobDDMMYYYY" => date('d/m/Y', strtotime($traveler_info['place_order']['travelers']['dob'][$key])),
+            "ageAtDepartureDate" => 66,
+            "phoneDaytime" => $traveler_info['place_order']['travelers']['phone'][$key],
+            "email" => $traveler_info['place_order']['travelers']['email'][$key],
+            "postalAddress" => $traveler_info['place_order']['travelers']['address'][$key],
+            "postalCity" => "Auckland",
+            "postalState" => "",
+            "postalCode" => $traveler_info['place_order']['travelers']['postcode'][$key],
+            "postalCountry" => $traveler_info['place_order']['travelers']['country'][$key],
+            "height" => 162,
+            "weight" => 66,
+            "occupation" => "Retired",
+            "preExistingMedicalConditions" => 0,
+            "preExistingMedicalConditionsDetail" => "",
+            "specialDietaryRequirements" => 0,
+            "specialDietaryRequirementsDetail" => "",
+            "bikeRental" => "Electric Bike",
+            "cyclingSkillLevel" => "Reasonable - cycle occasionally for up to 1hr",
         ];
     }
 
