@@ -171,6 +171,7 @@ if (isset($booking_id)) {
 
 	$wp_travel_engine_setting =  get_post_meta($tripid[0], 'wp_travel_engine_setting', true);
     $one_day_trip = ($wp_travel_engine_setting['trip_duration'] == '1' && $wp_travel_engine_setting['trip_duration_unit'] == 'days') ?? false;
+	$one_day_trip = ($wp_travel_engine_setting['trip_duration_unit'] == 'hours') ?? $one_day_trip;
 ?>
 	<form method="post" id="wp-travel-engine-order-form" class="<?php echo $one_day_trip ? 'one-day-trip' : ''; ?>" action="" enctype="multipart/form-data" data-id=<?php echo $booking_id; ?>>
 		<?php

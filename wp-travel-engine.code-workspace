@@ -1,0 +1,17 @@
+{
+	"folders": [
+		{
+			"path": "../../plugins/wp-travel-engine"
+		},
+		{
+			"path": "../../plugins/wptravelengine-pro"
+		},
+		{
+			"path": "."
+		},
+		{
+			"path": "../travel-monster"
+		}
+	],
+	"settings": {}
+}

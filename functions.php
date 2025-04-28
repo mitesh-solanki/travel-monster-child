@@ -15,15 +15,15 @@ if (!function_exists('chld_thm_cfg_locale_css')):
 endif;
 add_filter('locale_stylesheet_uri', 'chld_thm_cfg_locale_css');
 
-if (!function_exists('child_theme_configurator_css')):
-    function child_theme_configurator_css()
-    {
-        wp_enqueue_style('chld_thm_cfg_child', trailingslashit(get_stylesheet_directory_uri()) . 'style.css', array('travel-monster-style', 'travel-monster-style', 'travel-monster-elementor'), 6.3);
-        wp_enqueue_script('chld_thm_cfg_child_script', trailingslashit(get_stylesheet_directory_uri()) . 'main.js', array(), time());
+if ( !function_exists( 'chld_thm_cfg_parent_css' ) ):
+    function chld_thm_cfg_parent_css() {
+        wp_enqueue_style( 'chld_thm_cfg_parent', trailingslashit( get_template_directory_uri() ) . 'style.css', array(  ) );
+		wp_enqueue_style('chld_thm_cfg_child', trailingslashit(get_stylesheet_directory_uri()) . 'style.css', array('travel-monster-style', 'travel-monster-style', 'travel-monster-elementor'));
+		wp_enqueue_script('chld_thm_cfg_child_script', trailingslashit(get_stylesheet_directory_uri()) . 'main.js', array(), time());
         wp_localize_script('chld_thm_cfg_child_script', 'ajaxUrl', array('ajax_url' => admin_url('admin-ajax.php')));
     }
 endif;
-add_action('wp_enqueue_scripts', 'child_theme_configurator_css', 20);
+add_action( 'wp_enqueue_scripts', 'chld_thm_cfg_parent_css', 10 );
 
 // END ENQUEUE PARENT ACTION
 
@@ -250,7 +250,6 @@ function webhook_trigger_call($traveler_info, $prev_booking_id, $post_id)
  * @return array Modified array of fields
  */
 function os_restrict_traveller_fields($fields, $traveller_index = 1, $one_Day_trip = false) {
-    
     if ( $one_Day_trip ) {        
         // Define restricted fields for different roles
         $common_fields = array(
@@ -264,10 +263,10 @@ function os_restrict_traveller_fields($fields, $traveller_index = 1, $one_Day_tr
         );
 
         $specific_fields = array(
+            'customer_note',
+            'how_did_you_hear_about_us',
             'traveller_email',
             'traveller_phone',
-            'how_hear_about_us',
-            'customer_note',
         );
 
         foreach ($common_fields as $field) {
@@ -284,7 +283,15 @@ function os_restrict_traveller_fields($fields, $traveller_index = 1, $one_Day_tr
 
     return $fields;
 }
-add_filter('os_traveller_fields', 'os_restrict_traveller_fields', 10, 3);
+add_filter('os_traveller_fields', 'os_restrict_traveller_fields', 99, 3);
+
+add_action('wp_travel_engine_booking_fields_display', 'os_restrict_traveller_fields', 99, 3);
+/**
+ * Filter emergency contact fields based on user roles
+ * 
+ * @param array $fields Array of emergency contact fields
+ * @return array Modified array of fields
+ */ 
 
 function os_restrict_emergency_contact_fields($fields, $traveller_index = 1, $one_Day_trip = false) {
     
@@ -317,68 +324,13 @@ function os_restrict_emergency_contact_fields($fields, $traveller_index = 1, $on
 }
 add_filter('os_emergency_contact_fields', 'os_restrict_emergency_contact_fields', 10, 3);
 
-function os_traveller_info_fields_display($fields, $one_day_trip = false) {
-    if ( $one_day_trip ) {
-        $additional_fields = array(
-            'traveller_height' => array(
-            'type'          => 'text',
-            'field_label'   => __( 'Height', 'wp-travel-engine' ),
-            'wrapper_class' => 'wp-travel-engine-personal-details',
-            'name'          => 'wp_travel_engine_placeorder_setting[place_order][travelers][height]',
-            'id'            => 'wp_travel_engine_placeorder_setting[place_order][travelers][height]',
-            'validations'   => array(
-                'required' => true,
-            ),
-            'default'       => '',
-            'priority'      => 10,
-            'default_field' => true,
-        ),
-        'bike_selection' => array(
-            'type'          => 'select', 
-            'field_label'   => __( 'Bike Selection', 'wp-travel-engine' ),
-            'wrapper_class' => 'wp-travel-engine-personal-details',
-            'name'          => 'wp_travel_engine_placeorder_setting[place_order][travelers][bike]',
-            'id'            => 'wp_travel_engine_placeorder_setting[place_order][travelers][bike]',
-            'validations'   => array(
-                'required' => true,
-            ),
-            'options'       => array(
-                ''              => __( 'Please choose...', 'wp-travel-engine' ),
-                'ebike_low'    => __( 'E-bike Low', 'wp-travel-engine' ),
-                'ebike_std'    => __( 'E-bike Std', 'wp-travel-engine' ),
-                'standard'     => __( 'Standard Bike', 'wp-travel-engine' ),
-            ),
-            'default'       => '',
-            'priority'      => 20,
-            'default_field' => true,
-        ),
-        'how_hear_about_us' => array(
-            'type'          => 'textarea',
-            'field_label'   => __( 'How did you hear about us?', 'wp-travel-engine' ),
-            'wrapper_class' => 'wp-travel-engine-personal-details',
-            'name'          => 'wp_travel_engine_placeorder_setting[place_order][travelers][hear_about]',
-            'id'            => 'wp_travel_engine_placeorder_setting[place_order][travelers][hear_about]',
-            'validations'   => array(
-                'required' => true,
-            ),
-            'default'       => '',
-            'priority'      => 30,
-            'default_field' => true,
-        ),
-        'customer_note' => array(
-            'type'          => 'textarea',
-            'field_label'   => __( 'Special Requirements/Notes', 'wp-travel-engine' ),
-            'wrapper_class' => 'wp-travel-engine-personal-details',
-            'name'          => 'wp_travel_engine_placeorder_setting[place_order][travelers][notes]',
-            'id'            => 'wp_travel_engine_placeorder_setting[place_order][travelers][notes]',
-            'default'       => '',
-            'priority'      => 40,
-            'default_field' => true,
-            ),
-        );
-        return array_merge($fields, $additional_fields);
-    }
-    return $fields;
-}
 
-add_filter('os_travel_engine_traveller_info_fields_display', 'os_traveller_info_fields_display', 10, 2);
+function os_wte_get_template($template, $template_name) {
+    echo 'xxx';
+    echo $template;
+    if ($template == 'template-checkout/content-travellers-details.php') {
+     return '';
+    }
+    return $template;
+}
+add_filter('wte_get_template', 'os_wte_get_template', 10, 2);
