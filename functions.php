@@ -79,14 +79,14 @@ add_action('save_post_booking', 'cpm_after_chekout_submit');
 
 function cpm_after_chekout_submit($post_id)
 {
-    if (isset($_POST['wp_travel_engine_nw_bkg_submit'])) {
+    //if (isset($_POST['wp_travel_engine_nw_bkg_submit'])) {
         $prev_booking_id = $_GET['bookingId'];
         $traveler_info = get_post_meta($prev_booking_id, 'wp_travel_engine_placeorder_setting', true);
         $update =  update_post_meta($post_id, 'wp_travel_engine_placeorder_setting', $traveler_info);
         $traveller_details = get_post_meta($prev_booking_id, 'traveller_info', true);
         update_post_meta($post_id, 'traveller_info', $traveller_details);
         webhook_trigger_call($traveler_info, $prev_booking_id, $post_id);
-    }
+    //}
 }
 
 
@@ -325,12 +325,33 @@ function os_restrict_emergency_contact_fields($fields, $traveller_index = 1, $on
 add_filter('os_emergency_contact_fields', 'os_restrict_emergency_contact_fields', 10, 3);
 
 
-function os_wte_get_template($template, $template_name) {
-    echo 'xxx';
-    echo $template;
-    if ($template == 'template-checkout/content-travellers-details.php') {
-     return '';
-    }
-    return $template;
+/**
+ * Fire a custom event after a booking is completed in WP Travel Engine.
+ */
+add_action( 'wp_travel_engine_after_booking_process_completed', 'custom_event_on_booking', 10 );
+function custom_event_on_booking( $booking_id ) {
+    // Retrieve booking details
+    $booking_details = get_post_meta( $booking_id, 'wp_travel_engine_booking_setting', true );
+    $trip_id = get_post_meta( $booking_id, 'wp_travel_engine_booking_trip_id', true );
+    $customer_email = get_post_meta( $booking_id, 'wp_travel_engine_booking_contact_email', true );
+    $traveler_info = get_post_meta( $booking_id, 'wp_travel_engine_placeorder_setting', true );
+
+    // Prepare data to pass to the custom event
+    $event_data = array(
+        'booking_id'    => $booking_id,
+        'payment_id'    => $payment_id,
+        'trip_id'       => $trip_id,
+        'customer_email' => $customer_email,
+        'booking_details' => $booking_details,
+    );
+
+    error_log( 'Custom booking event fired for Booking ID: ' . $booking_id );
+    webhook_trigger_call($traveler_info, $booking_id, $booking_id);
 }
-add_filter('wte_get_template', 'os_wte_get_template', 10, 2);
+
+add_action( 'wp_travel_engine_after_traveller_information_save', 'wp_traveller_information_save' );
+
+function wp_traveller_information_save( $booking_id ) {
+    update_post_meta($booking_id, 'wp_travel_engine_placeorder_setting', $_POST['wp_travel_engine_placeorder_setting']);
+    update_post_meta($booking_id, 'traveller_info', $_POST['wp_travel_engine_placeorder_setting']);
+}
